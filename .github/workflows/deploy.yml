@@ -1,0 +1,32 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Voer de actie uit bij wijzigingen in de 'main' branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Actie draait op een Ubuntu-server
+
+    steps:
+      # 1. Check out de code van de repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. Stel SSH in met de private key
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 3. Verbind met de server en voer de deployment uit
+      - name: Deploy to Server
+        run: |
+          ssh -o StrictHostKeyChecking=no azureuser@20.86.150.199 << 'EOF'
+            cd ~/website
+            git pull origin main  # Haal de laatste code op
+            docker-compose down   # Stop bestaande containers
+            docker-compose build  # Bouw de containers opnieuw
+            docker-compose up -d  # Start de containers opnieuw
+          EOF
