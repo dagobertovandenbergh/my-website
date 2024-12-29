@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  website:
+    image: projectcloud.azurecr.io/w3-blog:latest
+    container_name: website
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`cloudwebsite.mooo.com`)"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls=true"
+    networks:
+      - web
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.mytls.acme.tlschallenge=true"
+      - "--certificatesresolvers.mytls.acme.email=s101401@ap.be"
+      - "--certificatesresolvers.mytls.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
